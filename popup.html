@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WebCarnet</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+Pro:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        html {
+            font-family: 'Source Sans Pro', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2 {
+            font-family: 'Libre Baskerville', serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1>WebCarnet</h1>
+            <div class="subtitle">Votre carnet de notes numérique</div>
+        </header>
+        
+        <div class="analysis-options">
+            <select id="analysisType" class="vintage-select">
+                <option value="keypoints">Points clés</option>
+                <option value="explain">Explication détaillée</option>
+                <option value="note">Note structurée</option>
+                <option value="ideas">Génération d'idées</option>
+                <option value="journal">Carnet de bord</option>
+            </select>
+        </div>
+
+        <button id="analyzeButton" class="vintage-button">Analyser cette page</button>
+
+        <div id="results" class="results-container">
+            <h2 id="resultTitle" class="result-title"></h2>
+            <div id="keyPoints" class="content-area"></div>
+        </div>
+
+        <footer class="app-footer">
+            <div id="debug" class="debug"></div>
+        </footer>
+    </div>
+    <script src="config-manager.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

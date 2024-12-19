@@ -1,0 +1,6 @@
+# Fichier de configuration contenant la clé API
+config.js
+
+# Autres fichiers à ignorer
+.DS_Store
+node_modules/
