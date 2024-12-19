@@ -20,6 +20,8 @@ const PROMPTS = {
     note: {
         system: `Tu es NoteBuddy, un assistant spécialisé dans la création de Notes de Réflexion Condensée (NRC) pour un système de deuxième cerveau. Une NRC est une note concise qui capture l'essence d'une idée, d'un concept clé, d'une citation, d'une observation ou d'une expérience. Elle présente l'information de manière directe, intègre des citations pertinentes, et inclut une brève réflexion ou question ouverte.
 
+Si des notes personnelles sont fournies, utilise-les en priorité pour enrichir ton analyse et personnaliser la note en fonction des réflexions précédentes de l'utilisateur.
+
 Principes à suivre :
 - Concision : 150-250 mots maximum
 - Impact immédiat : Aller droit au but
@@ -55,35 +57,40 @@ source: [URL exact de l'articleou référence de l'article]
 
 ## Réflexion
 [Question ouverte ou piste de réflexion pour conclure]`,
-        user: content => `Crée une Note de Réflexion Condensée (NRC) à partir de ce contenu en suivant strictement le format spécifié dans les instructions système. Le contenu doit être modulaire et facilement réutilisable pour différents formats (newsletter, posts sociaux, etc.).
+        user: content => `Crée une Note de Réflexion Condensée (NRC) à partir de ce contenu en suivant strictement le format spécifié dans les instructions système. Si des notes personnelles sont présentes, intègre-les dans ton analyse pour créer une note plus personnalisée et contextuelle.
 
 Contenu à analyser :
 ${content}`
     },
     ideas: {
-        system: 'Tu es un assistant créatif. Ta tâche est de générer des idées stimulantes, des angles inexploités, des applications pratiques, des connexions interdisciplinaires et des idées de contenu à partir du texte fourni.',
-        user: content => `Analyse cette page et génère :
+        system: 'Tu es un assistant créatif. Ta tâche est de générer 10 idées stimulantes, des angles inexploités, des applications pratiques, des connexions interdisciplinaires et des idées de contenu à partir du texte fourni.',
+        user: content => `Vous recevrez un texte et votre tâche consistera à générer 10 idées de contenu pour les médias sociaux, newsletter  sur la base de cet article. Chaque idée doit être adaptée à un public professionnel. 
 
-1. Questions Stimulantes
-- [3 questions provocantes ou réflexions qui émergent du contenu]
+Votre tâche consiste à :
+1. Générer 10 idées uniques de contenu pour les médias sociaux ou newsletter sur la base des points principaux, des idées ou des données de l'article.
+2. Pour chaque idée, expliquez pourquoi elle pourrait susciter l'engagement d'un public professionnel.
 
-2. Angles Inexploités
-- [2-3 perspectives ou angles qui n'ont pas été abordés]
+Suivez les lignes directrices suivantes :
+- Assurez-vous que chaque idée est distincte et qu'elle offre une valeur ajoutée aux professionnels.
+- Envisagez différents formats de contenu tels que des articles textuels, des infographies, de courtes vidéos, des sondages ou des questions.
+- Concentrez-vous sur les aspects les plus pertinents ou les plus intrigants pour un public de professionnels.
+- Réfléchissez à la manière dont chaque idée pourrait susciter une discussion, un partage ou une interaction.
 
-3. Applications Pratiques
-- [2-3 façons d'appliquer ces informations concrètement]
+Veillez à ce que vos  10 idées soient créatives, variées et spécifiquement adaptées au contenu de l'article et à un public professionnel.
 
-4. Connexions Interdisciplinaires
-- [2-3 liens avec d'autres domaines ou concepts]
-
-5. Idées de Contenu
-- [2-3 idées d'articles ou de contenus qui pourraient découler de ce sujet]
+Rédigez en français.
 
 Contenu à analyser :
 ${content}`
     },
     journal: {
         system: `Tu es un assistant spécialisé dans l'analyse et la réécriture de notes mentales personnelles. Tu as une sensibilité particulière aux nuances émotionnelles et une capacité à percevoir la personnalité derrière les mots. Tu comprends que chaque hésitation, chaque doute et chaque digression peut avoir une signification importante dans le processus de pensée.
+
+Si des notes personnelles précédentes sont fournies, utilise-les en priorité pour :
+- Maintenir la continuité de la réflexion
+- Faire des liens avec les pensées précédentes
+- Approfondir les questionnements existants
+- Identifier les évolutions de la pensée
 
 [TÂCHE]
 Tu dois transformer des notes mentales en un journal de réflexion structuré qui :
@@ -135,7 +142,9 @@ Ne jamais "lisser" les ambiguïtés significatives
 Conserver les digressions qui enrichissent la réflexion
 Maintenir le niveau de certitude/incertitude original
 Laisser transparaître la personnalité à travers le style`,
-        user: content => `Voici le texte à transformer en journal de réflexion personnel. Applique la méthode décrite dans les instructions système :\n\n${content}`
+        user: content => `Voici le texte à transformer en journal de réflexion personnel. Si des notes personnelles précédentes sont présentes, utilise-les pour créer une continuité dans la réflexion et approfondir les thèmes récurrents. Applique la méthode décrite dans les instructions système :
+
+${content}`
     }
 };
 
@@ -144,38 +153,79 @@ document.addEventListener('DOMContentLoaded', async () => {
     const analyzeButton = document.getElementById('analyzeButton');
     const keyPointsDiv = document.getElementById('keyPoints');
     const resultTitle = document.getElementById('resultTitle');
-    
-    if (!analysisType || !analyzeButton || !keyPointsDiv) {
-        showDebug("Erreur: Éléments d'interface non trouvés");
-        return;
+    const personalNotes = document.getElementById('personalNotes');
+    const notesInput = document.getElementById('notesInput');
+    const saveNotesBtn = document.getElementById('saveNotes');
+    const apiMissingDiv = document.getElementById('apiMissing');
+    const mainContentDiv = document.getElementById('mainContent');
+    const openOptionsBtn = document.getElementById('openOptions');
+
+    // Ajouter l'event listener pour le bouton Options avant la vérification
+    if (openOptionsBtn) {
+        openOptionsBtn.addEventListener('click', () => {
+            console.log("Ouverture de la page d'options...");
+            chrome.runtime.openOptionsPage();
+        });
     }
 
-    // Vérifier que la clé API est disponible
+    // Vérifier la clé API au chargement
     try {
         const apiKey = await ConfigManager.getApiKey();
         if (!apiKey) {
-            showDebug("Erreur: Clé API non trouvée");
+            showDebug("Clé API non configurée");
+            apiMissingDiv.style.display = 'block';
+            mainContentDiv.style.display = 'none';
             return;
+        } else {
+            apiMissingDiv.style.display = 'none';
+            mainContentDiv.style.display = 'block';
         }
-        showDebug("Extension chargée");
     } catch (error) {
         showDebug("Erreur lors de la vérification de la clé API: " + error.message);
+        apiMissingDiv.style.display = 'block';
+        mainContentDiv.style.display = 'none';
         return;
     }
 
     // Mettre à jour le titre lors du changement de type d'analyse
-    analysisType.addEventListener('change', () => {
-        updateResultTitle(analysisType.value);
-    });
-    
-    // Initialiser le titre
-    updateResultTitle(analysisType.value);
+    analysisType.addEventListener('change', async () => {
+        const type = analysisType.value;
+        console.log("Type d'analyse sélectionné:", type);
+        updateResultTitle(type);
 
+        // Afficher la zone de notes pour tous les types d'analyse
+        console.log("Affichage de la zone de notes");
+        personalNotes.classList.add('visible');
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const savedNotes = await loadSavedNotes(tab.url, type);
+        notesInput.value = savedNotes;
+    });
+
+    // Event listener pour le bouton de sauvegarde
+    saveNotesBtn.addEventListener('click', async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const type = analysisType.value;
+        await saveNotes(tab.url, type, notesInput.value);
+        showDebug('Notes sauvegardées');
+    });
+
+    // Initialiser le titre et la zone de notes
+    const initialType = analysisType.value;
+    console.log("Type initial:", initialType);
+    updateResultTitle(initialType);
+
+    console.log("Affichage initial de la zone de notes");
+    personalNotes.classList.add('visible');
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const savedNotes = await loadSavedNotes(tab.url, initialType);
+    notesInput.value = savedNotes;
+
+    // Gestionnaire de clic pour le bouton d'analyse
     analyzeButton.addEventListener('click', async () => {
         try {
             showDebug("Clic détecté");
             analyzeButton.textContent = 'Analyse en cours...';
-            
+
             // Vérifier la clé API avant de continuer
             const apiKey = await ConfigManager.getApiKey();
             if (!apiKey) {
@@ -185,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            
+
             // Exécuter le script dans la page
             const result = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
@@ -193,16 +243,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             const content = result[0].result;
-            
+
             if (!content) {
                 showDebug("Impossible de récupérer le contenu de la page");
                 analyzeButton.textContent = 'Analyser';
                 return;
             }
 
-            const type = document.getElementById('analysisType').value;
-            const analysis = await analyzeWithGPT4o(content, type);
-            
+            const type = analysisType.value;
+
+            // Récupérer les notes personnelles existantes si disponibles
+            let existingNotes = '';
+            existingNotes = notesInput.value || await loadSavedNotes(tab.url, type);
+            console.log("Notes personnelles à analyser:", existingNotes);
+
+            // Créer le contenu à analyser avec les notes personnelles
+            const contentToAnalyze = existingNotes
+                ? `[NOTES PERSONNELLES]\n${existingNotes}\n\n[CONTENU DE LA PAGE]\n${content}`
+                : content;
+
+            console.log("Contenu envoyé à l'API:", contentToAnalyze);
+
+            const analysis = await analyzeWithGPT4o(contentToAnalyze, type);
+
             if (analysis) {
                 const formattedAnalysis = formatAnalysis(analysis, type);
                 keyPointsDiv.innerHTML = formattedAnalysis;
@@ -220,15 +283,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 function updateResultTitle(type) {
     const titles = {
         keypoints: 'Points clés',
+        journal: 'Carnet de bord',
         explain: 'Explication détaillée',
         note: 'Note structurée',
-        ideas: 'Génération d\'idées',
-        journal: 'Journal de réflexion'
+        ideas: 'Idées générées'
     };
     const resultTitle = document.getElementById('resultTitle');
-    if (resultTitle) {
-        resultTitle.textContent = titles[type] || '';
-    }
+    resultTitle.textContent = titles[type] || '';
 }
 
 async function analyzeWithGPT4o(content, type) {
@@ -236,11 +297,11 @@ async function analyzeWithGPT4o(content, type) {
         showDebug("Récupération de la clé API...");
         const prompt = PROMPTS[type];
         const apiKey = await ConfigManager.getApiKey();
-        
+
         if (!apiKey) {
             throw new Error("Clé API non trouvée");
         }
-        
+
         showDebug("Appel de l'API OpenAI...");
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -277,80 +338,96 @@ async function analyzeWithGPT4o(content, type) {
 }
 
 function formatAnalysis(analysis, type) {
-    if (type === 'note') {
-        // Pour les NRC, conserver le formatage Markdown
-        return analysis.split('\n').map(line => {
-            // Gestion des titres avec #
-            if (line.startsWith('#')) {
-                // Enlever tous les # au début
-                const titleText = line.replace(/^#+\s*/, '');
-                return `<h2>${titleText}</h2>`;
-            } else if (line.startsWith('>')) {
-                return `<blockquote>${line.substring(1).trim()}</blockquote>`;
-            } else if (line.match(/^---/)) {
-                return '<hr>';
-            } else {
-                return `<p>${line}</p>`;
-            }
-        }).join('');
-    } else if (type === 'ideas') {
-        // Pour les idées, conserver le formatage Markdown avec support pour la numérotation et le gras
-        return analysis.split('\n').map(line => {
-            // Gestion du gras d'abord
-            line = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            
-            // Gestion des titres numériques (1., 2., etc.)
-            if (line.match(/^\d+\.\s/)) {
-                return `<h2>${line}</h2>`;
-            }
-            // Gestion des titres avec #
-            else if (line.startsWith('#')) {
-                return `<h2>${line.substring(1).trim()}</h2>`;
-            }
-            // Gestion des citations
-            else if (line.startsWith('>')) {
-                return `<blockquote>${line.substring(1).trim()}</blockquote>`;
-            }
-            // Gestion des séparateurs
-            else if (line.match(/^---/)) {
-                return '<hr>';
-            }
-            // Gestion des puces
-            else if (line.startsWith('-')) {
-                return `<p>${line}</p>`;
-            }
-            else {
-                return `<p>${line}</p>`;
-            }
-        }).join('');
-    } else if (type === 'journal') {
-        // Pour le journal, conserver le formatage Markdown avec support italique
-        return analysis.split('\n').map(line => {
-            // Gestion de l'italique d'abord
-            line = line.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-            
-            // Gestion des titres avec #
-            if (line.startsWith('#')) {
-                const titleText = line.replace(/^#+\s*/, '');
-                return `<h2>${titleText}</h2>`;
-            } else if (line.startsWith('>')) {
-                return `<blockquote>${line.substring(1).trim()}</blockquote>`;
-            } else if (line.match(/^---/)) {
-                return '<hr>';
-            } else {
-                return `<p>${line}</p>`;
-            }
-        }).join('');
-    } else {
-        // Pour les autres types (keypoints et explain), formater avec des puces et supporter le gras
-        return analysis.split('\n').map(line => {
-            // Gestion du gras d'abord
-            line = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            // Puis gestion des puces
-            line = line.replace(/^\s*[-*]\s+/, '• ');
-            return `<p>${line}</p>`;
-        }).join('');
+    if (!analysis) return '';
+
+    // Supprimer les marqueurs ```markdown au début et à la fin
+    analysis = analysis.replace(/^```markdown\n/, '').replace(/\n```$/, '');
+
+    // Fonction utilitaire pour formater le Markdown de base
+    function formatMarkdown(line) {
+        // Gestion du gras
+        line = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        // Gestion de l'italique
+        line = line.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        // Gestion des citations
+        line = line.replace(/^>\s*(.+)$/g, '<blockquote>$1</blockquote>');
+        return line;
     }
+
+    // Formatter chaque ligne avec le Markdown de base puis appliquer les règles spécifiques
+    const lines = analysis.split('\n').map(line => {
+        line = formatMarkdown(line);
+
+        // Gestion des titres avec #
+        if (line.match(/^#+\s/)) {
+            const level = line.match(/^#+/)[0].length;
+            const text = line.replace(/^#+\s*/, '');
+            return `<h${level}>${text}</h${level}>`;
+        }
+
+        // Gestion des listes numérotées
+        if (line.match(/^\d+\.\s/)) {
+            const text = line.replace(/^\d+\.\s/, '');
+            if (type === 'ideas') {
+                return `<div class="idea-item">${text}</div>`;
+            } else {
+                return `<div class="numbered-item">${line}</div>`;
+            }
+        }
+
+        // Gestion des puces
+        if (line.match(/^[-*]\s/)) {
+            return `<li>${line.substring(2)}</li>`;
+        }
+
+        // Gestion des sous-puces (indentées)
+        if (line.match(/^\s+[-*]\s/)) {
+            return `<li class="sub-item">${line.trim().substring(2)}</li>`;
+        }
+
+        // Gestion des séparateurs
+        if (line.match(/^-{3,}$/)) {
+            return '<hr>';
+        }
+
+        // Gestion des paragraphes non vides
+        if (line.trim().length > 0) {
+            if (type === 'ideas') {
+                return `<p class="idea-explanation">${line}</p>`;
+            } else {
+                return `<p>${line}</p>`;
+            }
+        }
+
+        return line;
+    });
+
+    // Grouper les éléments de liste
+    let html = '';
+    let inList = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith('<li>')) {
+            if (!inList) {
+                html += '<ul>';
+                inList = true;
+            }
+            html += line;
+        } else {
+            if (inList) {
+                html += '</ul>';
+                inList = false;
+            }
+            html += line;
+        }
+    }
+
+    if (inList) {
+        html += '</ul>';
+    }
+
+    return html;
 }
 
 function getPageContent() {
@@ -369,7 +446,7 @@ function getPageContent() {
     ];
 
     let content = '';
-    
+
     // Essayer chaque sélecteur jusqu'à trouver du contenu
     for (const selector of articleSelectors) {
         const element = document.querySelector(selector);
@@ -387,16 +464,16 @@ function getPageContent() {
                 'footer',
                 '.sidebar'
             ];
-            
+
             // Cloner l'élément pour ne pas modifier la page
             const clone = element.cloneNode(true);
-            
+
             // Supprimer les éléments non désirés
             excludeSelectors.forEach(sel => {
                 const elements = clone.querySelectorAll(sel);
                 elements.forEach(el => el.remove());
             });
-            
+
             content = clone.innerText;
             if (content.trim().length > 100) { // S'assurer qu'on a un contenu significatif
                 break;
@@ -411,12 +488,35 @@ function getPageContent() {
             content = main.innerText;
         }
     }
-    
+
     // Nettoyer le contenu
     content = content
         .replace(/\s+/g, ' ')  // Remplacer les espaces multiples par un seul
         .replace(/\n\s*\n/g, '\n')  // Remplacer les lignes vides multiples par une seule
         .trim();
-            
+
     return content;
+}
+
+// Fonction pour charger les notes sauvegardées
+async function loadSavedNotes(url, type) {
+    const key = `notes_${type}_${url}`;
+    const result = await chrome.storage.local.get(key);
+    return result[key] || '';
+}
+
+// Fonction pour sauvegarder les notes
+async function saveNotes(url, type, notes) {
+    const key = `notes_${type}_${url}`;
+    await chrome.storage.local.set({ [key]: notes });
+
+    // Afficher l'animation de confirmation
+    const confirmation = document.getElementById('saveConfirmation');
+    confirmation.classList.add('show');
+
+    // Retirer la classe après l'animation
+    setTimeout(() => {
+        confirmation.classList.remove('show');
+    }, 2000);
+    showDebug('Notes sauvegardées');
 }

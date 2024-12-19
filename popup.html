@@ -10,8 +10,193 @@
             font-family: 'Source Sans Pro', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
+        body {
+            width: 500px;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            padding: 20px;
+            box-sizing: border-box;
+            width: 100%;
+        }
         h1, h2 {
             font-family: 'Libre Baskerville', serif;
+        }
+        .app-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .app-header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        .api-missing {
+            text-align: center;
+            padding: 30px 20px;
+            background-color: #f8d7da;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .api-missing p {
+            color: #721c24;
+            margin: 0 0 20px 0;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        #openOptions {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(46, 204, 113, 0.2);
+        }
+        #openOptions:hover {
+            background-color: #27ae60;
+        }
+        .vintage-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+        .vintage-button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background-color: #722F37;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.2s;
+        }
+        .vintage-button:hover {
+            background-color: #5a252c;
+        }
+        .personal-notes {
+            margin: 20px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .personal-notes textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+        .notes-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #saveNotes {
+            flex: 1;
+            min-width: 120px;
+        }
+        .save-confirmation {
+            color: #27ae60;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .save-confirmation.show {
+            opacity: 1;
+        }
+        .idea-item {
+            margin: 15px 0 5px 0;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        .idea-explanation {
+            margin: 5px 0 15px 20px;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+        .content-area {
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .content-area h1 { font-size: 20px; margin: 20px 0 10px 0; }
+        .content-area h2 { font-size: 18px; margin: 18px 0 9px 0; }
+        .content-area h3 { font-size: 16px; margin: 16px 0 8px 0; }
+        
+        .content-area p {
+            margin: 8px 0;
+        }
+        
+        .content-area blockquote {
+            margin: 10px 0;
+            padding: 10px 20px;
+            border-left: 3px solid #ccc;
+            background-color: #f9f9f9;
+            font-style: italic;
+        }
+        
+        .content-area ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .content-area li {
+            margin: 5px 0;
+        }
+        
+        .content-area li.sub-item {
+            margin-left: 20px;
+        }
+        
+        .content-area hr {
+            margin: 15px 0;
+            border: none;
+            border-top: 1px solid #ddd;
+        }
+        
+        .content-area .numbered-item {
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .content-area .idea-item {
+            margin: 15px 0 5px 0;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        
+        .content-area .idea-explanation {
+            margin: 5px 0 15px 20px;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        .content-area strong {
+            font-weight: 600;
+        }
+        
+        .content-area em {
+            font-style: italic;
         }
     </style>
 </head>
@@ -22,21 +207,37 @@
             <div class="subtitle">Votre carnet de notes numérique</div>
         </header>
         
-        <div class="analysis-options">
-            <select id="analysisType" class="vintage-select">
-                <option value="keypoints">Points clés</option>
-                <option value="explain">Explication détaillée</option>
-                <option value="note">Note structurée</option>
-                <option value="ideas">Génération d'idées</option>
-                <option value="journal">Carnet de bord</option>
-            </select>
+        <div id="apiMissing" class="api-missing" style="display: none;">
+            <p>Pour utiliser WebCarnet, vous devez d'abord configurer votre clé API OpenAI.</p>
+            <button id="openOptions">Configurer la clé API</button>
         </div>
 
-        <button id="analyzeButton" class="vintage-button">Analyser cette page</button>
+        <div id="mainContent" style="display: none;">
+            <div class="analysis-options">
+                <select id="analysisType" class="vintage-select">
+                    <option value="keypoints">Points clés</option>
+                    <option value="explain">Explication détaillée</option>
+                    <option value="ideas">Génération d'idées</option>
+                    <option value="journal">Carnet de bord</option>
+                    <option value="note">Note structurée</option>
+                </select>
+            </div>
 
-        <div id="results" class="results-container">
-            <h2 id="resultTitle" class="result-title"></h2>
-            <div id="keyPoints" class="content-area"></div>
+            <button id="analyzeButton" class="vintage-button">Analyser cette page</button>
+
+            <div id="personalNotes" class="personal-notes">
+                <h3>Notes personnelles</h3>
+                <textarea id="notesInput" placeholder="Ajoutez vos notes personnelles ici..." rows="4"></textarea>
+                <div class="notes-actions">
+                    <button id="saveNotes" class="vintage-button">Sauvegarder</button>
+                    <div id="saveConfirmation" class="save-confirmation">Notes sauvegardées ✓</div>
+                </div>
+            </div>
+
+            <div id="results" class="results-container">
+                <h2 id="resultTitle" class="result-title"></h2>
+                <div id="keyPoints" class="content-area"></div>
+            </div>
         </div>
 
         <footer class="app-footer">

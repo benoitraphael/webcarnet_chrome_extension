@@ -1,36 +1,29 @@
-// Gestionnaire de configuration sécurisé
+// Gestionnaire de configuration pour WebCarnet
 const ConfigManager = {
-    // Initialise la configuration lors de la première installation
-    async init() {
+    // Clé pour stocker l'API key dans le stockage local
+    API_KEY_STORAGE_KEY: 'GPT4O_API_KEY',
+
+    // Récupérer la clé API
+    async getApiKey() {
         try {
-            const config = await chrome.storage.local.get('GPT4O_API_KEY');
-            if (!config.GPT4O_API_KEY) {
-                // Rediriger vers la page d'options si la clé n'est pas configurée
-                chrome.runtime.openOptionsPage();
-            }
-            return config.GPT4O_API_KEY;
+            const result = await chrome.storage.local.get(this.API_KEY_STORAGE_KEY);
+            return result[this.API_KEY_STORAGE_KEY];
         } catch (error) {
-            console.error('Erreur lors de l\'initialisation de la configuration:', error);
-            return null;
+            console.error('Erreur lors de la récupération de la clé API:', error);
+            throw error;
         }
     },
 
-    // Récupère la clé API de manière sécurisée
-    async getApiKey() {
+    // Sauvegarder la clé API
+    async setApiKey(apiKey) {
         try {
-            const config = await chrome.storage.local.get('GPT4O_API_KEY');
-            if (!config.GPT4O_API_KEY) {
-                // Au lieu de lancer une erreur, on redirige simplement vers la page d'options
-                chrome.runtime.openOptionsPage();
-                return null;
-            }
-            return config.GPT4O_API_KEY;
+            await chrome.storage.local.set({ [this.API_KEY_STORAGE_KEY]: apiKey });
         } catch (error) {
-            console.error('Erreur lors de la récupération de la clé API:', error);
-            return null;
+            console.error('Erreur lors de la sauvegarde de la clé API:', error);
+            throw error;
         }
     }
 };
 
 // Initialiser la configuration au démarrage
-ConfigManager.init();
+ConfigManager.getApiKey();
