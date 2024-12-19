@@ -6,9 +6,9 @@ WebCarnet est une extension Chrome qui utilise l'IA pour transformer n'importe q
 
 - **Points clés** : Extrait les informations essentielles de l'article
 - **Explication détaillée** : Obtient une analyse approfondie et vulgarisée
-- **Note structurée** : Crée une note formatée avec citations et réflexions
-- **Génération d'idées** : Suggère des angles inexploités et des applications pratiques
+- **Génération d'idées** : Suggère des idées de contenu pour les médias sociaux et newsletters
 - **Carnet de bord** : Transforme le contenu en journal de réflexion personnel
+- **Note structurée** : Crée une note formatée avec citations et réflexions
 
 ## Installation
 
@@ -29,7 +29,15 @@ WebCarnet est une extension Chrome qui utilise l'IA pour transformer n'importe q
 1. Naviguez vers une page web
 2. Cliquez sur l'icône de WebCarnet
 3. Choisissez le type d'analyse souhaité
-4. Cliquez sur "Analyser"
+4. Ajoutez vos notes personnelles si nécessaire
+5. Cliquez sur "Analyser"
+
+## Fonctionnalités récentes
+
+- Support complet du Markdown dans toutes les analyses
+- Zone de notes personnelles pour enrichir l'analyse
+- Interface utilisateur améliorée avec styles cohérents
+- Meilleure organisation des types d'analyses
 
 ## Technologies utilisées
 
